@@ -60,7 +60,6 @@
             transition: all 0.3s ease;
             background: #fafafa;
             position: relative;
-            overflow: hidden;
         }
 
         .upload-area:hover {
@@ -68,10 +67,9 @@
             background: #f0f0ff;
         }
 
-        .upload-area.has-image {
-            border: 3px solid #667eea;
-            padding: 0;
-            height: 400px;
+        .upload-area.uploaded {
+            border-color: #28a745;
+            background: #f0fff4;
         }
 
         .upload-icon {
@@ -84,25 +82,11 @@
             font-size: 1.1em;
         }
 
-        .image-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-            cursor: move;
-            display: none;
-        }
-
-        .image-container.active {
-            display: block;
-        }
-
-        .image-container img {
-            position: absolute;
-            max-width: none;
-            height: 100%;
-            user-select: none;
-            -webkit-user-drag: none;
+        .upload-filename {
+            color: #28a745;
+            font-size: 0.9em;
+            margin-top: 10px;
+            font-weight: 600;
         }
 
         .controls {
@@ -238,33 +222,25 @@
         <div class="instructions">
             <h3>How to use:</h3>
             <ol>
-                <li>Upload two photos by clicking on the upload areas below</li>
-                <li>Once both photos are loaded, the preview will appear at the bottom</li>
-                <li>Click and drag the photos in the preview to reposition them</li>
-                <li>Click "Export Diptych" to download your combined image (3000×2000px)</li>
+                <li>Click the upload areas below to select your left and right photos</li>
+                <li>Your combined preview will appear automatically at the bottom</li>
+                <li>Click and drag in the preview to reposition each photo</li>
+                <li>Click "Export Diptych" to download your image (3000×2000px)</li>
             </ol>
         </div>
 
         <div class="upload-section">
             <div class="upload-area" id="upload1" data-side="left">
-                <div class="upload-prompt">
-                    <div class="upload-icon">📸</div>
-                    <div class="upload-text">Click to upload left photo</div>
-                </div>
-                <div class="image-container" id="container1">
-                    <img id="image1" src="" alt="Left image">
-                </div>
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">Click to upload left photo</div>
+                <div class="upload-filename" id="filename1"></div>
                 <input type="file" id="file1" accept="image/*">
             </div>
 
             <div class="upload-area" id="upload2" data-side="right">
-                <div class="upload-prompt">
-                    <div class="upload-icon">📸</div>
-                    <div class="upload-text">Click to upload right photo</div>
-                </div>
-                <div class="image-container" id="container2">
-                    <img id="image2" src="" alt="Right image">
-                </div>
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">Click to upload right photo</div>
+                <div class="upload-filename" id="filename2"></div>
                 <input type="file" id="file2" accept="image/*">
             </div>
         </div>
@@ -308,10 +284,8 @@
         const upload2 = document.getElementById('upload2');
         const file1 = document.getElementById('file1');
         const file2 = document.getElementById('file2');
-        const image1 = document.getElementById('image1');
-        const image2 = document.getElementById('image2');
-        const container1 = document.getElementById('container1');
-        const container2 = document.getElementById('container2');
+        const filename1 = document.getElementById('filename1');
+        const filename2 = document.getElementById('filename2');
         const exportBtn = document.getElementById('exportBtn');
         const resetBtn = document.getElementById('resetBtn');
         const status = document.getElementById('status');
@@ -352,16 +326,13 @@
                     state.images[side].offsetX = (HALF_WIDTH - scaledWidth) / 2;
                     state.images[side].offsetY = 0;
 
+                    // Update UI
                     if (side === 'left') {
-                        image1.src = e.target.result;
-                        upload1.classList.add('has-image');
-                        container1.classList.add('active');
-                        centerImage(image1, container1, 'left');
+                        upload1.classList.add('uploaded');
+                        filename1.textContent = file.name;
                     } else {
-                        image2.src = e.target.result;
-                        upload2.classList.add('has-image');
-                        container2.classList.add('active');
-                        centerImage(image2, container2, 'right');
+                        upload2.classList.add('uploaded');
+                        filename2.textContent = file.name;
                     }
 
                     updateStatus();
@@ -370,19 +341,6 @@
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
-        }
-
-        function centerImage(imgElement, container, side) {
-            // Center the image initially
-            const containerWidth = container.offsetWidth;
-            const imgWidth = imgElement.offsetWidth;
-            const offset = (containerWidth - imgWidth) / 2;
-
-            imgElement.style.left = offset + 'px';
-            imgElement.style.top = '0px';
-
-            state.images[side].offsetX = offset;
-            state.images[side].offsetY = 0;
         }
 
         // Canvas drag functionality
@@ -540,12 +498,10 @@
             state.images.right = { file: null, offsetX: 0, offsetY: 0, img: null };
 
             // Reset UI
-            image1.src = '';
-            image2.src = '';
-            upload1.classList.remove('has-image');
-            upload2.classList.remove('has-image');
-            container1.classList.remove('active');
-            container2.classList.remove('active');
+            upload1.classList.remove('uploaded');
+            upload2.classList.remove('uploaded');
+            filename1.textContent = '';
+            filename2.textContent = '';
             file1.value = '';
             file2.value = '';
 
