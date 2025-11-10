@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diptych Creator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .upload-area.has-image {
+            border: 3px solid #667eea;
+            padding: 0;
+            height: 400px;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .image-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            cursor: move;
+            display: none;
+        }
+
+        .image-container.active {
+            display: block;
+        }
+
+        .image-container img {
+            position: absolute;
+            max-width: none;
+            height: 100%;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 15px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .preview-info {
+            text-align: center;
+            color: #666;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #666;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+        }
+
+        .preview-section {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #eee;
+        }
+
+        .preview-section h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .preview-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            cursor: move;
+            display: block;
+        }
+
+        canvas.empty {
+            display: none;
+        }
+
+        .empty-preview {
+            color: #999;
+            font-size: 1.2em;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Diptych Creator</h1>
+        <p class="subtitle">Combine two photos into a beautiful side-by-side image</p>
+
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <ol>
+                <li>Upload two photos by clicking on the upload areas below</li>
+                <li>Once both photos are loaded, the preview will appear at the bottom</li>
+                <li>Click and drag the photos in the preview to reposition them</li>
+                <li>Click "Export Diptych" to download your combined image (3000×2000px)</li>
+            </ol>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="upload1" data-side="left">
+                <div class="upload-prompt">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Click to upload left photo</div>
+                </div>
+                <div class="image-container" id="container1">
+                    <img id="image1" src="" alt="Left image">
+                </div>
+                <input type="file" id="file1" accept="image/*">
+            </div>
+
+            <div class="upload-area" id="upload2" data-side="right">
+                <div class="upload-prompt">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Click to upload right photo</div>
+                </div>
+                <div class="image-container" id="container2">
+                    <img id="image2" src="" alt="Right image">
+                </div>
+                <input type="file" id="file2" accept="image/*">
+            </div>
+        </div>
+
+        <div class="preview-info" id="status">Upload two photos to get started</div>
+
+        <div class="controls">
+            <button class="btn btn-success" id="exportBtn" disabled>Export Diptych</button>
+            <button class="btn btn-secondary" id="resetBtn">Reset All</button>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <h3>Preview - Drag to Reposition</h3>
+            <div class="preview-container" id="previewContainer">
+                <div class="empty-preview" id="emptyPreview">Upload two photos to see preview</div>
+                <canvas id="canvas" class="empty"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        const state = {
+            images: {
+                left: { file: null, offsetX: 0, offsetY: 0, img: null },
+                right: { file: null, offsetX: 0, offsetY: 0, img: null }
+            },
+            isDragging: false,
+            currentSide: null,
+            startX: 0,
+            startY: 0
+        };
+
+        // Constants
+        const FINAL_WIDTH = 3000;
+        const FINAL_HEIGHT = 2000;
+        const HALF_WIDTH = FINAL_WIDTH / 2;
+
+        // DOM elements
+        const upload1 = document.getElementById('upload1');
+        const upload2 = document.getElementById('upload2');
+        const file1 = document.getElementById('file1');
+        const file2 = document.getElementById('file2');
+        const image1 = document.getElementById('image1');
+        const image2 = document.getElementById('image2');
+        const container1 = document.getElementById('container1');
+        const container2 = document.getElementById('container2');
+        const exportBtn = document.getElementById('exportBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const status = document.getElementById('status');
+        const previewSection = document.getElementById('previewSection');
+        const emptyPreview = document.getElementById('emptyPreview');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = FINAL_WIDTH;
+        canvas.height = FINAL_HEIGHT;
+
+        // Upload handlers
+        upload1.addEventListener('click', () => file1.click());
+        upload2.addEventListener('click', () => file2.click());
+
+        file1.addEventListener('change', (e) => handleFileSelect(e, 'left'));
+        file2.addEventListener('change', (e) => handleFileSelect(e, 'right'));
+
+        function handleFileSelect(event, side) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.images[side].img = img;
+                    state.images[side].file = file;
+
+                    // Calculate initial centered position on canvas
+                    const imgHeight = img.height;
+                    const imgWidth = img.width;
+                    const scaledHeight = FINAL_HEIGHT;
+                    const scaledWidth = (imgWidth / imgHeight) * scaledHeight;
+
+                    // Center horizontally within the half
+                    state.images[side].offsetX = (HALF_WIDTH - scaledWidth) / 2;
+                    state.images[side].offsetY = 0;
+
+                    if (side === 'left') {
+                        image1.src = e.target.result;
+                        upload1.classList.add('has-image');
+                        container1.classList.add('active');
+                        centerImage(image1, container1, 'left');
+                    } else {
+                        image2.src = e.target.result;
+                        upload2.classList.add('has-image');
+                        container2.classList.add('active');
+                        centerImage(image2, container2, 'right');
+                    }
+
+                    updateStatus();
+                    updatePreview();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function centerImage(imgElement, container, side) {
+            // Center the image initially
+            const containerWidth = container.offsetWidth;
+            const imgWidth = imgElement.offsetWidth;
+            const offset = (containerWidth - imgWidth) / 2;
+
+            imgElement.style.left = offset + 'px';
+            imgElement.style.top = '0px';
+
+            state.images[side].offsetX = offset;
+            state.images[side].offsetY = 0;
+        }
+
+        // Canvas drag functionality
+        canvas.addEventListener('mousedown', startCanvasDrag);
+
+        function startCanvasDrag(event) {
+            if (!state.images.left.img || !state.images.right.img) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const mouseX = (event.clientX - rect.left) * scaleX;
+            const mouseY = (event.clientY - rect.top) * scaleY;
+
+            // Determine which side was clicked
+            if (mouseX < HALF_WIDTH) {
+                state.currentSide = 'left';
+            } else {
+                state.currentSide = 'right';
+            }
+
+            state.isDragging = true;
+            state.startX = event.clientX;
+            state.startY = event.clientY;
+
+            document.addEventListener('mousemove', dragCanvas);
+            document.addEventListener('mouseup', stopCanvasDrag);
+        }
+
+        function dragCanvas(event) {
+            if (!state.isDragging) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const deltaX = (event.clientX - state.startX) * scaleX;
+            const deltaY = (event.clientY - state.startY) * scaleY;
+
+            const side = state.currentSide;
+            state.images[side].offsetX += deltaX;
+            state.images[side].offsetY += deltaY;
+
+            state.startX = event.clientX;
+            state.startY = event.clientY;
+
+            updatePreview();
+        }
+
+        function stopCanvasDrag() {
+            state.isDragging = false;
+            document.removeEventListener('mousemove', dragCanvas);
+            document.removeEventListener('mouseup', stopCanvasDrag);
+        }
+
+        // Status update
+        function updateStatus() {
+            const hasLeft = state.images.left.file !== null;
+            const hasRight = state.images.right.file !== null;
+
+            if (hasLeft && hasRight) {
+                status.textContent = 'Both photos loaded! Drag in the preview below to reposition.';
+                exportBtn.disabled = false;
+            } else if (hasLeft) {
+                status.textContent = 'Left photo loaded. Upload the right photo to continue.';
+                exportBtn.disabled = true;
+            } else if (hasRight) {
+                status.textContent = 'Right photo loaded. Upload the left photo to continue.';
+                exportBtn.disabled = true;
+            } else {
+                status.textContent = 'Upload two photos to get started';
+                exportBtn.disabled = true;
+            }
+        }
+
+        // Update preview canvas
+        function updatePreview() {
+            const hasLeft = state.images.left.img !== null;
+            const hasRight = state.images.right.img !== null;
+
+            if (!hasLeft || !hasRight) {
+                canvas.classList.add('empty');
+                emptyPreview.style.display = 'block';
+                return;
+            }
+
+            canvas.classList.remove('empty');
+            emptyPreview.style.display = 'none';
+
+            generateCombinedImage();
+        }
+
+        // Generate combined image on canvas
+        function generateCombinedImage() {
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, FINAL_WIDTH, FINAL_HEIGHT);
+
+            // Draw left image
+            const leftImg = state.images.left.img;
+            const leftImgHeight = leftImg.height;
+            const leftImgWidth = leftImg.width;
+            const leftScaledHeight = FINAL_HEIGHT;
+            const leftScaledWidth = (leftImgWidth / leftImgHeight) * leftScaledHeight;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, HALF_WIDTH, FINAL_HEIGHT);
+            ctx.clip();
+            ctx.drawImage(leftImg, state.images.left.offsetX, state.images.left.offsetY, leftScaledWidth, leftScaledHeight);
+            ctx.restore();
+
+            // Draw right image
+            const rightImg = state.images.right.img;
+            const rightImgHeight = rightImg.height;
+            const rightImgWidth = rightImg.width;
+            const rightScaledHeight = FINAL_HEIGHT;
+            const rightScaledWidth = (rightImgWidth / rightImgHeight) * rightScaledHeight;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(HALF_WIDTH, 0, HALF_WIDTH, FINAL_HEIGHT);
+            ctx.clip();
+            ctx.drawImage(rightImg, HALF_WIDTH + state.images.right.offsetX, state.images.right.offsetY, rightScaledWidth, rightScaledHeight);
+            ctx.restore();
+        }
+
+        // Export functionality
+        exportBtn.addEventListener('click', exportDiptych);
+
+        function exportDiptych() {
+            // Generate the combined image
+            generateCombinedImage();
+
+            // Download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `diptych-${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                status.textContent = 'Diptych exported successfully!';
+            }, 'image/png', 1.0);
+        }
+
+        // Reset functionality
+        resetBtn.addEventListener('click', () => {
+            // Reset state
+            state.images.left = { file: null, offsetX: 0, offsetY: 0, img: null };
+            state.images.right = { file: null, offsetX: 0, offsetY: 0, img: null };
+
+            // Reset UI
+            image1.src = '';
+            image2.src = '';
+            upload1.classList.remove('has-image');
+            upload2.classList.remove('has-image');
+            container1.classList.remove('active');
+            container2.classList.remove('active');
+            file1.value = '';
+            file2.value = '';
+
+            // Reset preview
+            canvas.classList.add('empty');
+            emptyPreview.style.display = 'block';
+            ctx.clearRect(0, 0, FINAL_WIDTH, FINAL_HEIGHT);
+
+            updateStatus();
+        });
+    </script>
+</body>
+</html>
